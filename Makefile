@@ -3,7 +3,7 @@ PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 
 TARGET = webd
-SRCS = $(wildcard *.go) $(wildcard */*.go)
+SRCS = $(wildcard *.go) $(wildcard */*.go) $(wildcard */*/*.go)
 
 all: $(TARGET)
 

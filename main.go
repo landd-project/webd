@@ -7,27 +7,20 @@ import (
 	"net"
 	"os"
 
-	"webd/internal"
+	"webd/internal/request"
+	"webd/internal/config"
 )
 
-/*
- GET url TAB 2
- TRUST url
- UNTRUST url
-
- TAB NEW BLANK
- TAB NEW url
- TAB SEL 0
- TAB DEL 1
-
-{"geminiprotocol.net", "bbs.geminispace.org", "kennedy.gemi.dev/search?abobora"}
-*/
-
 func main() {
-	socketPath :=  "/tmp/webd.sock";
-	os.Remove(socketPath);
+	config, err := config.GetConfig();
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: failed to get config: %v\n", err);
+		os.Exit(1);	
+	}
 
-	listener, err := net.Listen("unix", socketPath);
+	os.Remove(config.SocketPath);
+
+	listener, err := net.Listen("unix", config.SocketPath);
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to listen: %v\n", err);
 		os.Exit(1);
@@ -46,7 +39,7 @@ func main() {
 func handleConnection(conn net.Conn) {
 	defer conn.Close();
 	reader := bufio.NewReader(conn);
-	request, err := reader.ReadString('\n');
+	req, err := reader.ReadString('\n');
 	if err != nil {
 		if err == io.EOF {
 			return
@@ -54,7 +47,7 @@ func handleConnection(conn net.Conn) {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to read request: %v\n", err);
 	}
 
-	err = internal.ParseRequest(request);
+	err = request.ParseRequest(req);
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to read request: %v\n", err);
 	}

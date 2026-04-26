@@ -1,0 +1,9 @@
+
+socket-path: /tmp/webd.internal.sock
+#keep-history: true
+keep-history: limited
+history-limit: 100
+#keep-history: false
+
+# proxy things here
+

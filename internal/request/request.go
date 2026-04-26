@@ -1,8 +1,10 @@
-package internal
+package request
 
 import (
 	"fmt"
 	"strings"
+
+	"webd/internal/gemini"
 )
 
 /*
@@ -27,12 +29,10 @@ func ParseRequest(req string) error {
 
 	switch command {
 	case "FETCH":
-		err := RequestPage(url);
+		err := gemini.RequestPage(url);
 		if err != nil {
 			return err;
 		}
-	case "TRUST":
-	case "UNTRUST":
 	case "TAB":
 	default:
 		return fmt.Errorf("invalid command on request: `%v`", command);
