@@ -22,16 +22,14 @@ type Response struct {
 }
 
 func ParseRequest(req string) Response {
-
 	var r = Response{
-		Ok: true,
+		Ok: false,
 		Error: "",
 		Data: nil,
 	};
 
 	parts := strings.Split(req, " ");
 	if len(parts) < 2 {
-		r.Ok = false;
 		r.Error = fmt.Sprintf("invalid number of parameters in request, expected: 2 or more but founds: %v", len(parts));
 		return r;
 	}
@@ -41,31 +39,22 @@ func ParseRequest(req string) Response {
 
 	switch command {
 	case "FETCH":
-		response, err := gemini.RequestPage(url);
+		response, err := gemini.RequestPage(url, 0);
 		if err != nil {
-			r.Ok = false;
 			r.Error = err.Error();
 			return r;
 		}
-
-		g, err := gemini.ParseResponse(response);
-		if err != nil {
-			r.Ok = false;
-			r.Error = err.Error();
-			return r;
-		}
-		r.Data = g;
+		r.Data = response;
 		
 	case "TAB":
-		r.Ok = false;
 		r.Error = "TODO: not implemented";
 		return r;
 	default:
-		r.Ok = false;
 		r.Error = fmt.Sprintf("invalid command on request: `%v`", command);
 		return r;
 	}
 
+	r.Ok = true;
 	return r;
 }
 

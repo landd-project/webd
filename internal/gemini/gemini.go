@@ -37,36 +37,43 @@ type GeminiResponse struct {
 	StatusCode int
 	Meta string
 	Body string
+	RedirectCount int
 }
 
-func RequestPage(rawUrl string) (string, error) {
+func RequestPage(rawUrl string, redirectCount int) (GeminiResponse, error) {
+	var geminiResponse GeminiResponse;
 
-	host, path, port, err := parseUrl(rawUrl);
-	if err != nil {
-		return "", err;
+	if redirectCount > 3 {
+		return geminiResponse, fmt.Errorf("too many redirects");
 	}
 
-	fmt.Println(net.JoinHostPort(host, port))
+	host, _, port, err := parseUrl(rawUrl);
+	if err != nil {
+		return geminiResponse, err;
+	}
+
 	conn, err := tls.Dial("tcp", net.JoinHostPort(host, port), &tls.Config{InsecureSkipVerify: true});
 	if err != nil {
-		return "", err;
+		return geminiResponse, err;
 	}
+	defer conn.Close();
 
-	request := fmt.Sprintf("gemini://%v%v\r\n", host, path);
+	request := fmt.Sprintf("%v\r\n", rawUrl);
+	fmt.Printf("REQUEST: %v\n", request);
 
 	_, err = conn.Write([]byte(request));
 	if err != nil {
-		return "", err;
+		return geminiResponse, err;
 	}
 
 	certs := conn.ConnectionState().PeerCertificates;
 	if len(certs) < 1 {
-		return "", fmt.Errorf("no certificate provided by the server");
+		return geminiResponse, fmt.Errorf("no certificate provided by the server");
 	}
 	cert := certs[0];
 	err = verifyFingerprint(host, cert);
 	if err != nil {
-		return "", err;
+		return geminiResponse, err;
 	}
 
 	buf := make([]byte, 4096);
@@ -83,16 +90,23 @@ func RequestPage(rawUrl string) (string, error) {
 		}
 	}
 
+	geminiResponse, err = ParseResponse(sb.String());
+	if err != nil {
+		return geminiResponse, err;
+	}
 
-	return sb.String(), nil;
+	geminiResponse.RedirectCount = redirectCount;
+
+	if geminiResponse.StatusCode == 30 || geminiResponse.StatusCode == 31 {
+		geminiResponse, err = RequestPage(geminiResponse.Meta, redirectCount+1);
+		if err != nil {
+			return geminiResponse, err;
+		}
+	}
+	return geminiResponse, nil;
 }
 
 func parseUrl(rawUrl string) (string, string, string, error) {
-
-	if !strings.HasPrefix(rawUrl, "gemini://") {
-		rawUrl = fmt.Sprintf("gemini://%v", rawUrl);
-	}
-	
 	u, err := url.Parse(rawUrl);
 	if err != nil {
 		return "", "", "", err;
@@ -142,10 +156,6 @@ func ParseResponse(response string) (GeminiResponse, error) {
 			return r, fmt.Errorf("server returned success response but without body");
 		}
 		r.Body = lines[1];
-	}
-
-	if strings.HasPrefix(statusCode, "3") {
-
 	}
 
 	if len([]byte(meta)) > 1024 {
