@@ -34,7 +34,13 @@ func ParsePage(content string) ([]Token, error) {
 	var tokens []Token;
 	var tok Token;
 
+	preformattedMode := false;
+
 	for i,line := range lines {
+		if preformattedMode {
+			tok.Type = TokenPreformat;
+			tok.Value = line;
+		}
 
 		if strings.HasPrefix(line, "###") {
 			tok.Type = TokenHeading3
@@ -74,7 +80,7 @@ func ParsePage(content string) ([]Token, error) {
 			tok.Value = l;
 
 		} else if strings.HasPrefix(line, "```") {
-			return nil, fmt.Errorf("failed to parse line: %v", i);
+			preformattedMode = !preformattedMode;
 		} else {
 			tok.Type = TokenText;
 			tok.Value = line;

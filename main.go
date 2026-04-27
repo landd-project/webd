@@ -2,13 +2,14 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"os"
 
-	"webd/internal/request"
 	"webd/internal/config"
+	"webd/internal/ipc"
 )
 
 func main() {
@@ -47,8 +48,12 @@ func handleConnection(conn net.Conn) {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to read request: %v\n", err);
 	}
 
-	err = request.ParseRequest(req);
+	response := ipc.ParseRequest(req);
+
+	bt, err := json.MarshalIndent(response, "", "	");
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: failed to read request: %v\n", err);
+		fmt.Fprintf(os.Stderr, "ERROR: failed to marshal json: %v\n", err) // TODO: maybe send this to the client.
 	}
+
+	conn.Write(bt);
 }

@@ -9,6 +9,8 @@ import (
 
 type Config struct {
 	SocketPath string
+	KeepHistory bool
+	HistoryLimit int
 }
 
 func GetBaseDir() (string, error) {
@@ -30,7 +32,7 @@ func GetConfig() (Config, error) {
 		return config, err;
 	}
 
-	if config.SocketPath != c.SocketPath {
+	if config.SocketPath != c.SocketPath && c.SocketPath != ""{
 		config.SocketPath = c.SocketPath;
 	}
 
