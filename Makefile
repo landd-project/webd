@@ -3,18 +3,20 @@ PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 
 TARGET = webd
+TARGETDIR = bin
 SRCS = $(wildcard *.go) $(wildcard */*.go) $(wildcard */*/*.go)
 
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
-	go build -o $@ .
+	mkdir -p $(TARGETDIR)
+	go build -o $(TARGETDIR)/$@ .
 
 install:
-	cp $(TARGET) $(BINDIR)/
+	cp $(TARGETDIR)/$(TARGET) $(BINDIR)/
 
 uninstall:
 	rm $(BINDIR)/$(TARGET)
 
 clean:
-	rm $(TARGET)
+	rm -r $(TARGETDIR)
