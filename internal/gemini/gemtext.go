@@ -27,7 +27,7 @@ type Link struct {
 	Url string
 }
 
-func ParsePage(content string) ([]Token, error) {
+func ParseGemtext(content string) ([]Token, error) {
 
 	lines := strings.Split(content, "\n");
 
@@ -37,9 +37,15 @@ func ParsePage(content string) ([]Token, error) {
 	preformattedMode := false;
 
 	for i,line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue;
+		}
+
 		if preformattedMode {
 			tok.Type = TokenPreformat;
 			tok.Value = line;
+			tokens = append(tokens, tok);
+			continue;
 		}
 
 		if strings.HasPrefix(line, "###") {
@@ -81,11 +87,12 @@ func ParsePage(content string) ([]Token, error) {
 
 		} else if strings.HasPrefix(line, "```") {
 			preformattedMode = !preformattedMode;
+
 		} else {
 			tok.Type = TokenText;
 			tok.Value = line;
+
 		}
-		
 
 		tokens = append(tokens, tok);
 	}
