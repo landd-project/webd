@@ -1,7 +1,6 @@
 
 socket-path: /tmp/webd.internal.sock
-#keep-history: true
-keep-history: limited
+keep-history: true
 history-limit: 100
 #keep-history: false
 
