@@ -71,7 +71,7 @@ func ParseGemtext(content string) ([]Token, error) {
 			tok.Type = TokenLink;
 			var l Link;
 
-			parts := strings.Split(line, " ");
+			parts := strings.Fields(line);
 			if len(parts) < 2{
 				return nil, fmt.Errorf("invalid link line: %v", i);
 			}
