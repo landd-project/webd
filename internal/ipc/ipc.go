@@ -7,14 +7,6 @@ import (
 	"webd/internal/gemini"
 )
 
-/*
-	FETCH url
-
-	TAB ALL
-	TAB GET 1
-	TAB DEL 1
-*/
-
 type Response struct {
 	Ok bool `json:"ok"`
 	Error string `json:"error"`
@@ -34,21 +26,39 @@ func ParseRequest(req string) Response {
 		return r;
 	}
 
-	url := strings.TrimSpace(parts[1]);
 	command := parts[0];
 
 	switch command {
 	case "FETCH":
+		url := strings.TrimSpace(parts[1]);
 		response, err := gemini.RequestPage(url, 0);
 		if err != nil {
 			r.Error = err.Error();
 			return r;
 		}
 		r.Data = response;
+
+	case "PARSE":
+		url := strings.TrimSpace(parts[1]);
+		response, err := gemini.RequestPage(url, 0);
+		if err != nil {
+			r.Error = err.Error();
+			return r;
+		}
+		tokens, err := gemini.ParseGemtext(response.Body);
+		if err != nil {
+			r.Error = err.Error();
+			return r;
+		}
+
+		r.Data = gemini.GeminiParsedResponse{
+			StatusCode: response.StatusCode,
+			Meta: response.Meta,
+			Body: response.Body,
+			Tokens: tokens,
+			RedirectCount: response.RedirectCount,
+		};
 		
-	case "TAB":
-		r.Error = "TODO: not implemented";
-		return r;
 	default:
 		r.Error = fmt.Sprintf("invalid command on request: `%v`", command);
 		return r;

@@ -32,11 +32,18 @@ const (
 	StatusCertifcateNotValid 		//62
 )
 
-
 type GeminiResponse struct {
 	StatusCode int
 	Meta string
 	Body string
+	RedirectCount int
+}
+
+type GeminiParsedResponse struct {
+	StatusCode int
+	Meta string
+	Body string
+	Tokens []Token
 	RedirectCount int
 }
 
@@ -59,7 +66,6 @@ func RequestPage(rawUrl string, redirectCount int) (GeminiResponse, error) {
 	defer conn.Close();
 
 	request := fmt.Sprintf("%v\r\n", rawUrl);
-	fmt.Printf("REQUEST: %v\n", request);
 
 	_, err = conn.Write([]byte(request));
 	if err != nil {
