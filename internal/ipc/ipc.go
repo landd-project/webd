@@ -2,7 +2,6 @@ package ipc
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"webd/internal/gemini"
@@ -67,34 +66,22 @@ func ParseRequest(req string) Response {
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
 			}
-			id, err := strconv.Atoi(strings.TrimSpace(parts[2]));
-			if err != nil {
-				r.Error = err.Error();
-				return r;
-			}
-			list := tabs.All();
+			id := strings.TrimSpace(parts[2]);
+			tabList := tabs.All();
 
-			if id >= len(list) {
-				r.Error = "this is not a valid id, it is major than the len of the tab list";
-				return r;
-			}
-			tab := list[id];
-			err = tabs.SetCurrentTab(tab);
+			tab := tabList[id];
+			err := tabs.SetCurrentTab(tab);
 			if err != nil {
 				r.Error = err.Error();
 				return r;
 			}
-			r.Data = id
+			r.Data = tab;
 
 		case "del":
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
 			}
-			id, err := strconv.Atoi(strings.TrimSpace(parts[2]));
-			if err != nil {
-				r.Error = err.Error();
-				return r;
-			}
+			id := strings.TrimSpace(parts[2]);
 			tabs.Delete(id);
 
 		case "all":
@@ -105,15 +92,28 @@ func ParseRequest(req string) Response {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for a new tab, expected: 3 or more but founds: %v", len(parts));
 			}
 			url := strings.TrimSpace(parts[2]);
-			err := tabs.NewTab(url);
+			tab, err := tabs.NewTab(url);
 			if err != nil {
 				r.Error = err.Error();
 				return r;
 			}
-			r.Data = url;
+			
+			r.Data = tab;
 		case "get":
 			current := tabs.GetCurrentTab();
 			r.Data = current;
+		case "put":
+			if len(parts) < 3 {
+				r.Error = fmt.Sprintf("invalid number of parameters in request for a new tab, expected: 3 or more but founds: %v", len(parts));
+			}
+			url := strings.TrimSpace(parts[2]);
+
+			tab, err := tabs.PutTab(url);
+			if err != nil {
+				r.Error = err.Error();
+				return r;
+			}
+			r.Data = tab;
 		}
 		
 	default:
