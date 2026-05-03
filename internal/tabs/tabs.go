@@ -63,3 +63,14 @@ func SetCurrentTab(tab Tab) error {
 func All() []Tab {
 	return tabs;
 }
+
+func Delete(id int) error {
+	if id >= len(tabs) {
+		return fmt.Errorf("invalid id: %v", id);
+	}
+	tabs = append(tabs[:id], tabs[id+1:]...);
+
+	return nil;
+}
+
+

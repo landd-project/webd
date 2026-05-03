@@ -67,7 +67,7 @@ func ParseRequest(req string) Response {
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
 			}
-			id, err := strconv.Atoi(parts[2]);
+			id, err := strconv.Atoi(strings.TrimSpace(parts[2]));
 			if err != nil {
 				r.Error = err.Error();
 				return r;
@@ -87,6 +87,16 @@ func ParseRequest(req string) Response {
 			r.Data = id
 
 		case "del":
+			if len(parts) < 3 {
+				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
+			}
+			id, err := strconv.Atoi(strings.TrimSpace(parts[2]));
+			if err != nil {
+				r.Error = err.Error();
+				return r;
+			}
+			tabs.Delete(id);
+
 		case "all":
 			list := tabs.All();
 			r.Data = list;
