@@ -3,7 +3,9 @@ package tabs
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
+	"encoding/json"
+	"os"
+
 	"webd/internal/gemini"
 )
 
@@ -14,9 +16,14 @@ type Tab struct {
 	Content any
 }
 
-var CurrentTab Tab = Tab{};
+type TabData struct {
+	CurrentTabId int;
+	Tabs map[string]Tab;
+}
 
-var tabs = make(map[string]Tab);
+var tabData TabData;
+
+var tabsOrder []string;
 
 func generateTabId() (string, error){
 	bytes := make([]byte, 16);
@@ -61,26 +68,25 @@ func NewTab(url string) (Tab, error) {
 		return tab, err;
 	}
 
-	err = SetCurrentTab(tab);
+	err = SetCurrentTab(tabData.CurrentTabId);
 	if err != nil {
 		return tab, err;
 	}
-	tabs[tab.Id] = tab;
+	tabsOrder = append(tabsOrder, tab.Id);
+	tabData.Tabs[tab.Id] = tab;
 
 	return tab, nil;
 }
 
 func PutTab(url string) (Tab, error) {
-	currentTab := GetCurrentTab();
-
 	tab, err := MakeTab(url);
 	if err != nil {
 		return tab, err;
 	}
+	currentTab := GetCurrentTab();
+	tabData.Tabs[currentTab.Id] = tab;
 
-	tabs[currentTab.Id] = tab;
-
-	err = SetCurrentTab(tab);
+	err = SetCurrentTab(tabData.CurrentTabId);
 	if err != nil {
 		return tab, err;
 	}
@@ -88,27 +94,46 @@ func PutTab(url string) (Tab, error) {
 }
 
 func GetCurrentTab() Tab {
-	return CurrentTab;
+	id := tabsOrder[tabData.CurrentTabId];
+	return tabData.Tabs[id];
 }
 
-func SetCurrentTab(tab Tab) error {
-	empty := Tab{};
-	if tab == empty {
-		return fmt.Errorf("could set current tab to an empty tab");
+func SetCurrentTab(id int) error {
+	tabData.CurrentTabId = id;
+	return nil;
+}
+
+func All() []Tab {
+	var t []Tab;
+	for _,v := range tabsOrder {
+		t = append(t, tabData.Tabs[v]);
+	}
+	return t;
+}
+
+func Delete(id int) error {
+	last := len(tabsOrder)-1;
+	tabsOrder = append(tabsOrder[:last], tabsOrder[last+1:]...);
+	delete(tabData.Tabs, tabsOrder[id]);
+
+	return nil;
+}
+
+func SaveTabs() error {
+	bt, err := json.Marshal(&tabData);
+	if err != nil {
+		return err;
 	}
 
-	CurrentTab = tab;	
+	// TODO: fix path
+	err = os.WriteFile("tabs.json", bt, 0644);
+	if err != nil {
+		return err;
+	}
 	return nil;
 }
 
-func All() map[string]Tab {
-	return tabs;
+func LoadTabs() {
+
 }
-
-func Delete(id string) error {
-	delete(tabs, id);
-
-	return nil;
-}
-
 

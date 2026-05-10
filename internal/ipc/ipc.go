@@ -3,6 +3,7 @@ package ipc
 import (
 	"fmt"
 	"strings"
+	"strconv"
 
 	"webd/internal/gemini"
 	"webd/internal/tabs"
@@ -67,22 +68,33 @@ func ParseRequest(req string) Response {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
 			}
 			id := strings.TrimSpace(parts[2]);
-			tabList := tabs.All();
+			idInt, err := strconv.Atoi(id);
+			if err != nil {
+				r.Error = "argument id for the `sel` command needs to be a integer";
+				return r;
+			}
 
-			tab := tabList[id];
-			err := tabs.SetCurrentTab(tab);
+			err = tabs.SetCurrentTab(idInt);
 			if err != nil {
 				r.Error = err.Error();
 				return r;
 			}
-			r.Data = tab;
+
+			tabList := tabs.All();
+			r.Data = tabList[idInt];
 
 		case "del":
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
 			}
 			id := strings.TrimSpace(parts[2]);
-			tabs.Delete(id);
+			idInt, err := strconv.Atoi(id);
+			if err != nil {
+				r.Error = "argument id for the `del` command needs to be a integer";
+				return r;
+			}
+
+			tabs.Delete(idInt);
 
 		case "all":
 			list := tabs.All();
