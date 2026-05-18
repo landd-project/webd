@@ -66,6 +66,7 @@ func ParseRequest(req string) Response {
 		case "sel":
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
+				return r;
 			}
 			id := strings.TrimSpace(parts[2]);
 			idInt, err := strconv.Atoi(id);
@@ -74,18 +75,17 @@ func ParseRequest(req string) Response {
 				return r;
 			}
 
-			err = tabs.SetCurrentTab(idInt);
+			tab, err := tabs.Select(idInt);
 			if err != nil {
 				r.Error = err.Error();
 				return r;
 			}
-
-			tabList := tabs.All();
-			r.Data = tabList[idInt];
+			r.Data = tab;
 
 		case "del":
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for select a tab, expected: 3 or more but founds: %v", len(parts));
+				return r;
 			}
 			id := strings.TrimSpace(parts[2]);
 			idInt, err := strconv.Atoi(id);
@@ -97,11 +97,16 @@ func ParseRequest(req string) Response {
 			tabs.Delete(idInt);
 
 		case "all":
-			list := tabs.All();
+			list, err := tabs.All();
+			if err != nil {
+				r.Error = "failed to load tabs file";
+				return r;
+			}
 			r.Data = list;
 		case "new":
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for a new tab, expected: 3 or more but founds: %v", len(parts));
+				return r;
 			}
 			url := strings.TrimSpace(parts[2]);
 			tab, err := tabs.NewTab(url);
@@ -112,11 +117,16 @@ func ParseRequest(req string) Response {
 			
 			r.Data = tab;
 		case "get":
-			current := tabs.GetCurrentTab();
+			current, err := tabs.Get();
+			if err != nil {
+				r.Error = err.Error();
+				return r;
+			}
 			r.Data = current;
 		case "put":
 			if len(parts) < 3 {
 				r.Error = fmt.Sprintf("invalid number of parameters in request for a new tab, expected: 3 or more but founds: %v", len(parts));
+				return r;
 			}
 			url := strings.TrimSpace(parts[2]);
 
