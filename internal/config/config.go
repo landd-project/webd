@@ -9,24 +9,28 @@ import (
 )
 
 type Config struct {
-	SocketPath string
+	TcpHost string
 	KeepHistory bool
 	HistoryLimit int
 	PreserveTabs bool
 }
 
 func GetBaseDir() (string, error) {
-	dir, err := os.UserConfigDir();
+	xdgDir := os.Getenv("XDG_CONFIG_HOME");
+
+	path := filepath.Join(xdgDir, "webd");
+
+	err := os.MkdirAll(path, 0755);
 	if err != nil {
 		return "", err;
 	}
 
-	return dir, nil;
+	return path, nil;	
 }
 
 func GetConfig() (Config, error) {
 	var config = Config{
-		SocketPath: "/tmp/webd.internal.sock",
+		TcpHost: "localhost:5353",
 		KeepHistory: false,
 	};
 
@@ -35,8 +39,8 @@ func GetConfig() (Config, error) {
 		return config, err;
 	}
 
-	if config.SocketPath != c.SocketPath && c.SocketPath != "" {
-		config.SocketPath = c.SocketPath;
+	if config.TcpHost != c.TcpHost && c.TcpHost != "" {
+		config.TcpHost = c.TcpHost;
 	}
 	if config.KeepHistory != c.KeepHistory {
 		config.KeepHistory = c.KeepHistory;
@@ -76,8 +80,8 @@ func parseConfig() (Config, error) {
 		value := strings.TrimSpace(parts[1]);
 
 		switch key {
-		case "socket-path":
-			c.SocketPath = value;
+		case "tcp-host":
+			c.TcpHost = value;
 		case "keep-history":
 			boolValue, err := handleBooleanValues(value);
 			if err != nil {
