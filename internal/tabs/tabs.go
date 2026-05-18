@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 
 	"webd/internal/gemini"
@@ -17,13 +19,14 @@ type Tab struct {
 }
 
 type TabData struct {
-	CurrentTabId int;
-	Tabs map[string]Tab;
+	CurrentTabId int
+	Data map[string]Tab
+	Order []string
 }
 
-var tabData TabData;
-
-var tabsOrder []string;
+var tabs = TabData{
+	Data: make(map[string]Tab),
+};
 
 func generateTabId() (string, error){
 	bytes := make([]byte, 16);
@@ -68,13 +71,13 @@ func NewTab(url string) (Tab, error) {
 		return tab, err;
 	}
 
-	err = SetCurrentTab(tabData.CurrentTabId);
-	if err != nil {
+	tabs.Order = append(tabs.Order, tab.Id);
+	tabs.Data[tab.Id] = tab;
+	tabs.CurrentTabId = len(tabs.Order) -1;
+
+	if err = SaveTabs(); err != nil {
 		return tab, err;
 	}
-	tabsOrder = append(tabsOrder, tab.Id);
-	tabData.Tabs[tab.Id] = tab;
-
 	return tab, nil;
 }
 
@@ -83,57 +86,98 @@ func PutTab(url string) (Tab, error) {
 	if err != nil {
 		return tab, err;
 	}
-	currentTab := GetCurrentTab();
-	tabData.Tabs[currentTab.Id] = tab;
+	currentTabHashId := tabs.Order[tabs.CurrentTabId];
+	tabs.Data[currentTabHashId] = tab;
+	tabs.CurrentTabId = len(tabs.Order)-1;
 
-	err = SetCurrentTab(tabData.CurrentTabId);
-	if err != nil {
+	if err = SaveTabs(); err != nil {
 		return tab, err;
 	}
 	return tab, nil;
 }
 
-func GetCurrentTab() Tab {
-	id := tabsOrder[tabData.CurrentTabId];
-	return tabData.Tabs[id];
-}
-
-func SetCurrentTab(id int) error {
-	tabData.CurrentTabId = id;
-	return nil;
-}
-
-func All() []Tab {
-	var t []Tab;
-	for _,v := range tabsOrder {
-		t = append(t, tabData.Tabs[v]);
+func All() ([]Tab, error) {
+	if err := LoadTabs(); err != nil {
+		return nil, err;
 	}
-	return t;
+	var t []Tab;
+	for _,v := range tabs.Order {
+		t = append(t, tabs.Data[v]);
+	}
+	return t, nil;
 }
 
 func Delete(id int) error {
-	last := len(tabsOrder)-1;
-	tabsOrder = append(tabsOrder[:last], tabsOrder[last+1:]...);
-	delete(tabData.Tabs, tabsOrder[id]);
+	if id < 0 || id >= len(tabs.Order) {
+		return fmt.Errorf("index out of range");
+	}
+
+	hashId := tabs.Order[id];
+
+	tabs.Order = append(tabs.Order[:id], tabs.Order[id+1:]...);
+	delete(tabs.Data, hashId);
+
+	switch {
+	case len(tabs.Order) == 0:
+		tabs.CurrentTabId = 0;
+	case tabs.CurrentTabId == id:
+		if id > 0 {
+			tabs.CurrentTabId = id-1;
+		} else {
+			tabs.CurrentTabId = 0;
+		}
+	case tabs.CurrentTabId > id:
+		tabs.CurrentTabId--;
+	}
+
+	if err := SaveTabs(); err != nil {
+		return err;
+	}
 
 	return nil;
+}
+
+func Select(id int) (Tab, error) {
+	if id >= len(tabs.Order) {
+		return Tab{}, errors.New("invalid id, it's out of the length of the tabs list");
+	}
+	tabs.CurrentTabId = id;
+
+	tabId := tabs.Order[id];
+	return tabs.Data[tabId], nil;
+}
+
+func Get() (Tab, error) {
+	if tabs.CurrentTabId == 0 {
+		return Tab{}, errors.New("tab list is empty");
+	}	
+
+	currentTabHashId := tabs.Order[tabs.CurrentTabId];
+	tab := tabs.Data[currentTabHashId];
+	return tab, nil;
 }
 
 func SaveTabs() error {
-	bt, err := json.Marshal(&tabData);
+	bt, err := json.MarshalIndent(&tabs, "", "	");
 	if err != nil {
 		return err;
 	}
-
-	// TODO: fix path
-	err = os.WriteFile("tabs.json", bt, 0644);
+	err = os.WriteFile("./tabs.json", bt, 0644);
 	if err != nil {
 		return err;
 	}
 	return nil;
 }
 
-func LoadTabs() {
-
+func LoadTabs() error {
+	bt, err := os.ReadFile("./tabs.json");
+	if err != nil {
+		return err;
+	}
+	err = json.Unmarshal(bt, &tabs);
+	if err != nil {
+		return err
+	}
+	return nil;
 }
 
