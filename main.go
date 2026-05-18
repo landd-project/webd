@@ -19,9 +19,7 @@ func main() {
 		os.Exit(1);	
 	}
 
-	os.Remove(config.SocketPath);
-
-	listener, err := net.Listen("unix", config.SocketPath);
+	listener, err := net.Listen("tcp", config.TcpHost);
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to listen: %v\n", err);
 		os.Exit(1);
