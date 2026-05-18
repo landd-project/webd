@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"webd/internal/config"
 	"webd/internal/gemini"
 )
 
@@ -162,7 +164,14 @@ func SaveTabs() error {
 	if err != nil {
 		return err;
 	}
-	err = os.WriteFile("./tabs.json", bt, 0644);
+
+	base, err := config.GetBaseDir();
+	if err != nil {
+		return err;
+	}
+	path := filepath.Join(base, "tabs.json");
+
+	err = os.WriteFile(path, bt, 0644);
 	if err != nil {
 		return err;
 	}
@@ -170,7 +179,13 @@ func SaveTabs() error {
 }
 
 func LoadTabs() error {
-	bt, err := os.ReadFile("./tabs.json");
+	base, err := config.GetBaseDir();
+	if err != nil {
+		return err;
+	}
+	path := filepath.Join(base, "tabs.json");
+
+	bt, err := os.ReadFile(path);
 	if err != nil {
 		return err;
 	}
